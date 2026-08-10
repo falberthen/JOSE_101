@@ -2,6 +2,7 @@
 
 A .NET 10 console app showcasing **JWT, JWA, JWS, and JWE**, built on [`spectre.console`](https://github.com/spectreconsole/spectre.console) and [`jose-jwt`](https://github.com/dvsekhvalnov/jose-jwt).
 
+
 - **JWT** (JSON Web Token) — the overall envelope/claims-set format.
 - **JWA** (JSON Web Algorithms) — the registry of `alg`/`enc` values (HS256, RS256, ES256, A256GCM, ...) used below.
 - **JWS** (JSON Web Signature) — a signed JWT: readable payload, tamper-evident.
@@ -28,7 +29,7 @@ You get an arrow-key menu:
 ![Main menu](docs/screenshots/menu.png)
 
 Pick an action, then an algorithm. Before every sign/encrypt operation the app prints the exact payload it read from `samples/payloads/*.json` — edit those files to try your own claims, no rebuild needed.
-Before every verify/decrypt/inspect operation you can paste a token or just press Enter to use a bundled sample from `/samples`.
+Before every `verify/decrypt/inspect` operation you can paste a token or just press `Enter` to use a bundled sample from `/samples`.
 
 ## What you see on screen
 
@@ -36,8 +37,8 @@ Every token is rendered segment-by-segment so the `header.payload.signature` (or
 
 - A single colored line with the raw token, each segment tinted to match its panel below.
 - One panel per segment — **HEADER**, **PAYLOAD** (JWS only — never encrypted), **SIGNATURE**, or for JWE: **ENCRYPTED KEY** / **IV** / **CIPHERTEXT** / **TAG**.
-- On verify/decrypt: a **VERIFIED PAYLOAD** (JWS) or **DECRYPTED PAYLOAD** (JWE) panel, then a white **SUMMARY** panel (algorithm(s), token size, claims).
-- On `Inspect`: a red **! UNVERIFIED !** banner — the header/payload are decoded but nothing is signature-checked or decrypted, exactly like pasting into `jwt.io`'s debugger. Never treat that output as trusted.
+- On verify/decrypt — a **VERIFIED PAYLOAD** (JWS) or **DECRYPTED PAYLOAD** (JWE) panel, then a white **SUMMARY** panel (algorithm(s), token size, claims).
+- On `Inspect` — the header/payload are decoded but nothing is signature-checked or decrypted, exactly like pasting into `jwt.io`'s debugger. Never treat that output as trusted.
 - Pasting a malformed or wrong-type token (e.g. a JWE into a JWS verify flow) shows a clear red **ERROR** panel instead of crashing.
 
 **JWS HMAC (HS256)** — payload is readable (base64url, not encrypted), signature is opaque:
@@ -64,9 +65,10 @@ Unwrapping requires entering the *same* choices used to create the token — on 
 
 ## Usage flow for a first-time reader
 
-1. **Create** — `Sign / Encrypt` → `JWS HMAC (HS256)`, accept the default payload file → get back a token, rendered segment-by-segment.
-2. **Inspect** — `Inspect (no validation)`, paste that token → see the header (`alg`, `typ`) and, for JWS, the raw unverified payload — exactly what `jwt.io`'s debugger shows. No crypto happens here; never use this output for authorization.
-3. **Verify / decrypt** — `Verify / Decrypt` → `JWS HMAC (HS256)`, paste the same token → the signature is actually checked and you get the trusted payload back.
+1. **Create**: `Sign / Encrypt` → `JWS HMAC (HS256)`, accept the default payload file → get back a token, rendered segment-by-segment.
+2. **Inspect**: `Inspect (no validation)`, paste that token → see the header (`alg`, `typ`) and, for JWS, the raw unverified payload — exactly what `jwt.io`'s debugger shows. 
+No crypto happens here; never use this output for authorization.
+3. **Verify / decrypt**: `Verify / Decrypt` → `JWS HMAC (HS256)`, paste the same token → the signature is actually checked and you get the trusted payload back.
 
 Repeat the same flow for RSA, ECDSA, JWE direct, JWE RSA-OAEP, and Nested to see how each algorithm family differs.
 
@@ -74,14 +76,12 @@ The [`/samples`](samples/README.md) folder has one pre-generated token per type 
 
 ## Why these algorithms
 
-- **HMAC vs RSA vs ECDSA (JWS):** 
-HMAC is symmetric — one shared secret signs and verifies, fastest, but every verifier must be trusted with the secret. 
-RSA and ECDSA are asymmetric — sign with a private key, verify with a public key, so tokens can be safely verified by parties that must never be able to forge one.
-ECDSA gives the same asymmetric guarantee as RSA with much smaller keys/signatures.
-- **dir vs RSA-OAEP (JWE):** 
-`dir` uses one shared secret directly as the content-encryption key — simplest and fastest, but symmetric (same trust model as HMAC). 
-RSA-OAEP wraps a random per-message key with an RSA public key, so anyone with the public key can encrypt a message that only the private-key holder can decrypt.
-- **Nested (sign-then-encrypt):** combines both — a JWS proves authenticity, then wrapping it in a JWE adds confidentiality.
+- **HMAC vs RSA vs ECDSA (JWS):** `HMAC` is symmetric — one shared secret signs and verifies, fastest, but every verifier must be trusted with the secret. 
+`RSA` and `ECDSA` are asymmetric — sign with a private key, verify with a public key, so tokens can be safely verified by parties that must never be able to forge one.
+`ECDSA` gives the same asymmetric guarantee as RSA with much smaller keys/signatures.
+- **dir vs RSA-OAEP (JWE):** `dir` uses one shared secret directly as the content-encryption key — simplest and fastest, but symmetric (same trust model as HMAC). 
+`RSA-OAEP` wraps a random per-message key with an RSA public key, so anyone with the public key can encrypt a message that only the private-key holder can decrypt.
+- **Nested (sign-then-encrypt):** Combines both — a JWS proves authenticity, then wrapping it in a JWE adds confidentiality.
 
 
 ## Tests
@@ -90,4 +90,4 @@ RSA-OAEP wraps a random per-message key with an RSA public key, so anyone with t
 dotnet test tests/JOSE_101.Core.Tests
 ```
 
-Round-trip tests for every `JOSE_101.Core` factory ( sign→verify, encrypt→decrypt, nested sign-then-encrypt → decrypt-then-verify) plus a wrong-key-fails check for each. `JOSE_101.ConsoleApp` has no tests — it's a thin, purely interactive layer over `Core`.
+Round-trip tests for every `JOSE_101.Core` factory ( sign → verify, encrypt → decrypt, nested sign-then-encrypt → decrypt-then-verify) plus a wrong-key-fails check for each.
