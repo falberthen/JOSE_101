@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/keys/">
+    <File Path="keys/ec-private.pem" />
+    <File Path="keys/ec-public.pem" />
+    <File Path="keys/hmac-secret.txt" />
+    <File Path="keys/README.md" />
+    <File Path="keys/rsa-private.pem" />
+    <File Path="keys/rsa-public.pem" />
+  </Folder>
+  <Folder Name="/samples/">
+    <File Path="samples/jwe-direct.jwe" />
+    <File Path="samples/jwe-rsa-oaep.jwe" />
+    <File Path="samples/jws-ecdsa.jwt" />
+    <File Path="samples/jws-hmac.jwt" />
+    <File Path="samples/jws-rsa.jwt" />
+    <File Path="samples/nested-jws-then-jwe.jwe" />
+    <File Path="samples/README.md" />
+  </Folder>
+  <Folder Name="/samples/payloads/">
+    <File Path="samples/payloads/claims-basic.json" />
+    <File Path="samples/payloads/claims-sensitive.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/JOSE_101.ConsoleApp/JOSE_101.ConsoleApp.csproj" />
+    <Project Path="src/JOSE_101.Core/JOSE_101.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JOSE_101.Core.Tests/JOSE_101.Core.Tests.csproj" />
+  </Folder>
+</Solution>
