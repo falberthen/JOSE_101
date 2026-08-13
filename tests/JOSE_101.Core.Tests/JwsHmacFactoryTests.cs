@@ -2,6 +2,9 @@ namespace JOSE_101.Core.Tests;
 
 public class JwsHmacFactoryTests
 {
+    /// <summary>
+    /// The same secret signs and verifies, so the payload survives the round trip untouched.
+    /// </summary>
     [Fact]
     public void Sign_Then_Verify_ReturnsOriginalPayload()
     {
@@ -13,6 +16,9 @@ public class JwsHmacFactoryTests
         Assert.Equal("""{"sub":"alice"}""", payload);
     }
 
+    /// <summary>
+    /// A signature only proves anything to whoever holds the same secret, so a different one must be rejected.
+    /// </summary>
     [Fact]
     public void Verify_WithWrongSecret_Throws()
     {

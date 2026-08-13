@@ -2,6 +2,9 @@ namespace JOSE_101.Core.Tests;
 
 public class NestedJoseFactoryTests
 {
+    /// <summary>
+    /// Unwrapping a nested token reverses the order it was built in: decrypt the outer JWE first, then verify the inner JWS.
+    /// </summary>
     [Fact]
     public void SignThenEncrypt_ThenDecryptAndVerify_ReturnsOriginalPayload()
     {

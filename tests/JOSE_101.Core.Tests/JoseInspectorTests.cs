@@ -2,6 +2,9 @@ namespace JOSE_101.Core.Tests;
 
 public class JoseInspectorTests
 {
+    /// <summary>
+    /// A JWS payload is only encoded, never encrypted, so inspection can read it without any key at all.
+    /// </summary>
     [Fact]
     public void Inspect_JwsToken_ReturnsJwsTypeAndUnverifiedPayload()
     {
@@ -13,6 +16,9 @@ public class JoseInspectorTests
         Assert.Equal("""{"sub":"alice"}""", result.UnverifiedPayload);
     }
 
+    /// <summary>
+    /// A JWE payload is ciphertext, so inspection can identify the token type but has nothing readable to return.
+    /// </summary>
     [Fact]
     public void Inspect_JweToken_ReturnsJweTypeAndNullPayload()
     {
