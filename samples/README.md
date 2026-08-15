@@ -23,4 +23,4 @@ own claims, which of course produces tokens that no longer match the ones above.
 To decrypt the JWE/nested samples or re-verify anything, run the console app
 (`dotnet run --project src/JOSE_101.ConsoleApp`), pick "Verify / Decrypt", and paste a
 token from this folder — or pick "Inspect" to see any token's header without running any
-crypto. See the [top-level README](../README.md) for the full menu walkthrough.
+crypto.
