@@ -15,6 +15,8 @@ public sealed class HmacActions : JwsActionsBase
     protected override string SampleTokenFile => "jws-hmac.jwt";
     protected override string HintMessage => "Symmetric: the same secret signs and verifies, so every verifier must be trusted with it.";
     protected override string SuccessMessage => "HS256 signature verified with the shared secret.";
+    protected override string KeyPromptHint => "base64url-encoded secret";
     protected override string DoSign(string payloadJson) => JwsHmacFactory.Sign(payloadJson, keys.SharedSecret);
     protected override string DoVerify(string token) => JwsHmacFactory.Verify(token, keys.SharedSecret);
+    protected override string DoVerifyWithKey(string token, string keyInput) => JwsHmacFactory.Verify(token, Base64Url.DecodeFromChars(keyInput.Trim()));
 }

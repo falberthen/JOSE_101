@@ -14,28 +14,43 @@ public abstract class JweActionsBase
     protected abstract string SampleTokenFile { get; }
     protected abstract string HintMessage { get; }
     protected abstract string SuccessMessage { get; }
+    protected abstract string KeyPromptHint { get; }
     protected abstract string DoEncrypt(string payloadJson);
     protected abstract string DoDecrypt(string token);
+    protected abstract string DoDecryptWithKey(string token, string keyInput);
 
     public void Encrypt()
     {
         var payload = io.LoadPayload("payloads/claims-sensitive.json");
         var token = DoEncrypt(JsonSerializer.Serialize(payload));
-        TokenRenderer.RenderJwe(token, $"New {Label} JWE token");
-        TokenRenderer.RenderSummary(Label, payload, token);
+        ResultRenderer.RenderJwe(token, $"New {Label} JWE token");
+        ResultRenderer.RenderSummary(Label, payload, token);
         AnsiConsole.MarkupLine($"\n[grey]{HintMessage}[/]");
     }
 
     public void Decrypt()
     {
-        var token = io.GetToken(SampleTokenFile);
+        var (token, isBundled) = io.GetTokenWithSource(SampleTokenFile);
+
         ConsoleIO.Attempt(() =>
         {
-            TokenRenderer.RenderJwe(token, $"{Label} token to decrypt");
-            var payload = ConsoleIO.ParsePayload(DoDecrypt(token));
-            TokenRenderer.RenderSuccess(SuccessMessage);
-            TokenRenderer.RenderDecodedPayload(payload, "DECRYPTED PAYLOAD");
-            TokenRenderer.RenderSummary(Label, payload, token);
+            ResultRenderer.RenderJwe(token, $"{Label} token to decrypt");
+
+            string payloadJson;
+            if (isBundled)
+            {
+                payloadJson = DoDecrypt(token);
+            }
+            else
+            {
+                Console.WriteLine();
+                var keyInput = ConsoleIO.PromptMultiline($"Paste the {KeyPromptHint}:");
+                payloadJson = DoDecryptWithKey(token, keyInput);
+            }
+
+            var payload = ConsoleIO.ParsePayload(payloadJson);
+            ResultRenderer.RenderSuccess(SuccessMessage);
+            ResultRenderer.RenderSummaryWithPayload(Label, payload, token, "DECRYPTED PAYLOAD");
         });
     }
 }

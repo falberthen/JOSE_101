@@ -3,7 +3,7 @@ namespace JOSE_101.ConsoleApp;
 /// <summary>
 /// Colored console rendering of JOSE tokens segment-by-segment breakdown, summary panels, and step-by-step animation for nested unwrap.
 /// </summary>
-public static class TokenRenderer
+public static class ResultRenderer
 {
     private static readonly JsonSerializerOptions PrettyJson = new() { WriteIndented = true };
 
@@ -38,15 +38,17 @@ public static class TokenRenderer
         EnsureSegmentCount(parts, 5, "JWE");
         RenderTitle(title);
         RenderComposedToken(parts, HeaderColor.Tag, EncryptedColor.Tag, EncryptedColor.Tag, EncryptedColor.Tag, EncryptedColor.Tag);
+        var encryptedKeyContent = parts[1].Length == 0
+            ? "(empty — \"dir\" has no key wrapping)"
+            : Mask(parts[1]);
+
         WriteSegmentRow(
-            22,
-            Segment($"[{HeaderColor.Tag}]HEADER[/]", PrettyDecode(parts[0]), HeaderColor.Value, width: 22),
-            Segment($"[{EncryptedColor.Tag}]ENCRYPTED KEY[/]", parts[1].Length == 0
-                ? "(empty — \"dir\" has no key wrapping)"
-                : Mask(parts[1]), EncryptedColor.Value, width: 22),
-            Segment($"[{EncryptedColor.Tag}]IV[/]", Mask(parts[2]), EncryptedColor.Value, width: 22),
-            Segment($"[{EncryptedColor.Tag}]CIPHERTEXT[/]", Mask(parts[3]), EncryptedColor.Value, width: 22),
-            Segment($"[{EncryptedColor.Tag}]TAG[/]", Mask(parts[4]), EncryptedColor.Value, width: 22));
+            24,
+            Segment($"[{HeaderColor.Tag}]HEADER[/]", PrettyDecode(parts[0]), HeaderColor.Value, width: 24),
+            Segment($"[{EncryptedColor.Tag}]ENCRYPTED KEY[/]", encryptedKeyContent, EncryptedColor.Value, width: 24),
+            Segment($"[{EncryptedColor.Tag}]IV[/]", Mask(parts[2]), EncryptedColor.Value, width: 24),
+            Segment($"[{EncryptedColor.Tag}]CIPHERTEXT[/]", Mask(parts[3]), EncryptedColor.Value, width: 24),
+            Segment($"[{EncryptedColor.Tag}]TAG[/]", Mask(parts[4]), EncryptedColor.Value, width: 24));
     }
 
     /// <summary>
@@ -84,18 +86,46 @@ public static class TokenRenderer
     ///</summary>
     public static void RenderSummary(string algorithms, Dictionary<string, object> payload, string token)
     {
-        var sizeBytes = Encoding.UTF8.GetByteCount(token);
-        var content = new Rows(
-            new Markup($"[bold]Algorithm(s):[/] [{HeaderColor.Tag}]{Markup.Escape(algorithms)}[/]"),
-            new Markup($"[bold]Token size:[/] {sizeBytes} bytes"),
-            new Markup($"[bold {PayloadColor.Tag}]Payload / claims:[/]"),
-            new Text(JsonSerializer.Serialize(payload, PrettyJson), new Style(foreground: PayloadColor.Value)));
-
-        AnsiConsole.Write(new Panel(content).Header("[bold white]SUMMARY[/]").BorderColor(Color.White));
+        var summary = BuildSummaryPanel(algorithms, token);
+        AnsiConsole.Write(summary);
     }
 
+    public static void RenderSummaryWithPayload(string algorithms, Dictionary<string, object> payload, string token, string payloadLabel)
+    {
+        var summary = BuildSummaryPanel(algorithms, token);
+        var payloadPanel = Segment($"[green]{Markup.Escape(payloadLabel)}[/]", JsonSerializer.Serialize(payload, PrettyJson), Color.Green);
+
+        AnsiConsole.WriteLine();
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().PadLeft(0).PadRight(1));
+        grid.AddColumn(new GridColumn().PadLeft(0).PadRight(0));
+        grid.AddRow(summary, payloadPanel);
+        AnsiConsole.Write(grid);
+    }
+
+    private static Panel BuildSummaryPanel(string algorithms, string token)
+    {
+        var segments = token.Split('.');
+        var tailChars = TailSegmentLength(segments);
+
+        var content = new Rows(
+            new Markup($"[bold]Algorithm(s):[/] [{HeaderColor.Tag}]{Markup.Escape(algorithms)}[/]"),
+            new Markup($"[bold]Segments:[/] {segments.Length}"),
+            new Markup($"[bold]Token size:[/] {Encoding.UTF8.GetByteCount(token)} chars"),
+            new Markup($"[bold]Signature/tag:[/] {tailChars} chars"));
+
+        return new Panel(content).Header("[bold white]SUMMARY[/]").BorderColor(Color.White);
+    }
+
+    private static int TailSegmentLength(string[] segments) => segments.Length switch
+    {
+        3 => segments[2].Length,
+        5 => segments[4].Length,
+        _ => 0
+    };
+
     public static void RenderUnverifiedBanner()
-        => AnsiConsole.Write(new Panel(new Markup("[bold red]! UNVERIFIED ![/] — header/payload decoded below, but NO signature check and NO decryption were performed. Never use this for authorization."))
+        => AnsiConsole.Write(new Panel(new Markup("\n[bold red]! UNVERIFIED ![/] — header/payload decoded below, but NO signature check and NO decryption were performed. Never use this for authorization.\n"))
             .BorderColor(Color.Red));
 
     /// <summary>
@@ -108,11 +138,11 @@ public static class TokenRenderer
     }
 
     public static void RenderSuccess(string message) =>
-        AnsiConsole.MarkupLine($"[bold green]OK {Markup.Escape(message)}[/]");
+        AnsiConsole.MarkupLine($"\n[bold green]OK {Markup.Escape(message)}[/]");
 
     public static void RenderError(string message) => 
         AnsiConsole.Write(new Panel(new Text(message, new Style(foreground: Color.Red)))
-            .Header("[bold red]ERROR[/]")
+            .Header("\n\n[bold red]ERROR[/]")
             .BorderColor(Color.Red));
 
     /// <summary>
@@ -174,9 +204,7 @@ public static class TokenRenderer
     {
         var panel = new Panel(new Text(content, new Style(foreground: color))).Header(headerMarkup).BorderColor(color);
         if (width is not null)
-        {
             panel.Width = width;
-        }
 
         return panel;
     }

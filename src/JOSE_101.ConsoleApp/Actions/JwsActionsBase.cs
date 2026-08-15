@@ -15,28 +15,43 @@ public abstract class JwsActionsBase
     protected abstract string SampleTokenFile { get; }
     protected abstract string HintMessage { get; }
     protected abstract string SuccessMessage { get; }
+    protected abstract string KeyPromptHint { get; }
     protected abstract string DoSign(string payloadJson);
     protected abstract string DoVerify(string token);
+    protected abstract string DoVerifyWithKey(string token, string keyInput);
 
     public void Create()
     {
         var payload = io.LoadPayload("payloads/claims-basic.json");
         var token = DoSign(JsonSerializer.Serialize(payload));
-        TokenRenderer.RenderJws(token, $"New {FamilyName} ({Label}) JWS token");
-        TokenRenderer.RenderSummary(Label, payload, token);
+        ResultRenderer.RenderJws(token, $"New {FamilyName} ({Label}) JWS token");
+        ResultRenderer.RenderSummary(Label, payload, token);
         AnsiConsole.MarkupLine($"\n[grey]{HintMessage}[/]");
     }
 
     public void Verify()
     {
-        var token = io.GetToken(SampleTokenFile);
+        var (token, isBundled) = io.GetTokenWithSource(SampleTokenFile);
+
         ConsoleIO.Attempt(() =>
         {
-            TokenRenderer.RenderJws(token, $"{FamilyName} ({Label}) token to verify");
-            var payload = ConsoleIO.ParsePayload(DoVerify(token));
-            TokenRenderer.RenderSuccess(SuccessMessage);
-            TokenRenderer.RenderDecodedPayload(payload, "VERIFIED PAYLOAD");
-            TokenRenderer.RenderSummary(Label, payload, token);
+            ResultRenderer.RenderJws(token, $"{FamilyName} ({Label}) token to verify");
+
+            string payloadJson;
+            if (isBundled)
+            {
+                payloadJson = DoVerify(token);
+            }
+            else
+            {
+                Console.WriteLine();
+                var keyInput = ConsoleIO.PromptMultiline($"Paste the {KeyPromptHint}:");
+                payloadJson = DoVerifyWithKey(token, keyInput);
+            }
+
+            var payload = ConsoleIO.ParsePayload(payloadJson);
+            ResultRenderer.RenderSuccess(SuccessMessage);
+            ResultRenderer.RenderSummaryWithPayload(Label, payload, token, "VERIFIED PAYLOAD");
         });
     }
 }

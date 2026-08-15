@@ -31,15 +31,16 @@ public sealed class ConsoleIO
         return JsonSerializer.Deserialize<Dictionary<string, object>>(json)!;
     }
 
-    public string GetToken(string defaultSampleFileName)
+    public string GetToken(string defaultSampleFileName) =>
+        GetTokenWithSource(defaultSampleFileName).Token;
+
+    public (string Token, bool IsBundled) GetTokenWithSource(string defaultSampleFileName)
     {
         var input = AnsiConsole.Prompt(
             new TextPrompt<string>($"Paste a token, or leave blank to use the bundled sample ([grey]{defaultSampleFileName}[/]):")
                 .AllowEmpty());
         var token = new StringBuilder(input);
 
-        // Drain whatever is still waiting in the input buffer and stitch it back into a single token:
-        // a JOSE compact token never legitimately contains whitespace, so every line break here is a paste artifact, not real content.
         while (!Console.IsInputRedirected && Console.KeyAvailable)
         {
             token.Append(Console.ReadLine());
@@ -48,12 +49,26 @@ public sealed class ConsoleIO
         AnsiConsole.WriteLine();
 
         if (!string.IsNullOrWhiteSpace(token.ToString()))
-            return token.ToString().Trim();
+            return (token.ToString().Trim(), false);
 
-        return File.ReadAllText(Path.Combine(samplesDir, defaultSampleFileName)).Trim();
+        return (File.ReadAllText(Path.Combine(samplesDir, defaultSampleFileName)).Trim(), true);
     }
 
-    public static Dictionary<string, object> ParsePayload(string payloadJson) => 
+    public static string PromptMultiline(string prompt)
+    {
+        var input = AnsiConsole.Prompt(new TextPrompt<string>(prompt));
+        var buffer = new StringBuilder(input);
+
+        while (!Console.IsInputRedirected && Console.KeyAvailable)
+        {
+            buffer.Append('\n');
+            buffer.Append(Console.ReadLine());
+        }
+
+        return buffer.ToString().Trim();
+    }
+
+    public static Dictionary<string, object> ParsePayload(string payloadJson) =>
         JsonSerializer.Deserialize<Dictionary<string, object>>(payloadJson)!;
 
     public static void Attempt(Action operation)
@@ -64,7 +79,7 @@ public sealed class ConsoleIO
         }
         catch (Exception ex)
         {
-            TokenRenderer.RenderError(ex.Message);
+            ResultRenderer.RenderError(ex.Message);
             AnsiConsole.MarkupLine("\n[grey](press Enter to continue)[/]");
             Console.ReadLine();
         }

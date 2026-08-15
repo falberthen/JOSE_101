@@ -122,15 +122,15 @@ public sealed class Menu
         {
             var result = JoseInspector.Inspect(token);
 
-            TokenRenderer.RenderUnverifiedBanner();
+            ResultRenderer.RenderUnverifiedBanner();
             if (result.TokenType == "JWS")
             {
-                TokenRenderer.RenderJws(token, "JWS token (structure only)");
+                ResultRenderer.RenderJws(token, "JWS token (structure only)");
                 AnsiConsole.MarkupLine("[grey]3 segments: header.payload.signature. The payload is base64url-encoded but NOT encrypted — anyone can read it.[/]");
             }
             else
             {
-                TokenRenderer.RenderJwe(token, "JWE token (structure only)");
+                ResultRenderer.RenderJwe(token, "JWE token (structure only)");
                 AnsiConsole.MarkupLine("[grey]5 segments: header.encryptedKey.iv.ciphertext.tag. The payload is encrypted and cannot be read without the decryption key.[/]");
             }
         });
