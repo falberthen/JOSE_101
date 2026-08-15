@@ -15,9 +15,10 @@ signing/encryption keys are public in this repo (see [`keys/README.md`](../keys/
 | `jwe-rsa-oaep.jwe` | JWE | RSA-OAEP / A256GCM | Header only — jwt.io cannot decrypt JWE payloads |
 | `nested-jws-then-jwe.jwe` | Nested (JWS inside JWE) | dir / A256GCM, `cty: JWT` | Header only — decrypt first (menu `2` → `6`, `signWith: rsa`, `encryptWith: dir`) to see the inner JWS |
 
-All three JWS samples encode the same payload: `{"sub":"alice","role":"admin","iat":1754697600}`
-(see `payloads/claims-basic.json`). Both JWE samples encode: `{"sub":"alice","ssn":"redacted"}`
-(see `payloads/claims-sensitive.json`). The nested sample encodes `{"sub":"alice","role":"admin"}`.
+The three JWS samples and the nested one encode `{"sub":"alice","role":"admin"}`
+(see `payloads/claims-basic.json`). Both JWE samples encode `{"sub":"alice","ssn":"redacted"}`
+(see `payloads/claims-sensitive.json`). Edit either file and the app signs or encrypts your
+own claims, which of course produces tokens that no longer match the ones above.
 
 To decrypt the JWE/nested samples or re-verify anything, run the console app
 (`dotnet run --project src/JOSE_101.ConsoleApp`), pick "Verify / Decrypt", and paste a

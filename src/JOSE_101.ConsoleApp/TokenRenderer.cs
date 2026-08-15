@@ -188,7 +188,7 @@ public static class TokenRenderer
     {
         try
         {
-            var json = Encoding.UTF8.GetString(Base64UrlDecode(base64UrlSegment));
+            var json = Encoding.UTF8.GetString(Base64Url.DecodeFromChars(base64UrlSegment));
             return JsonSerializer.Serialize(JsonSerializer.Deserialize<Dictionary<string, object>>(json), PrettyJson);
         }
         catch
@@ -209,27 +209,5 @@ public static class TokenRenderer
         }
 
         return $"{segment[..keep]}...{segment[^keep..]}\n({segment.Length} chars,\nopaque)";
-    }
-
-    /// <summary>
-    /// Decodes a base64url string (the encoding every JOSE segment uses) into raw bytes.
-    /// Base64url is plain base64 with two changes: '+' and '/' become '-' and '_' (so the
-    /// text is safe to put in a URL), and the trailing '=' padding is left off entirely.
-    /// .NET's <see cref="Convert.FromBase64String"/> only understands plain base64, so
-    /// this undoes both changes first: swap the characters back, then re-add whichever
-    /// '=' characters were dropped (base64 text length must always be a multiple of 4).
-    /// </summary>
-    private static byte[] Base64UrlDecode(string input)
-    {
-        var base64 = input.Replace('-', '+').Replace('_', '/');
-
-        var missingPaddingCharacters = (base64.Length % 4) switch
-        {
-            2 => "==",  // 2 output bytes were left dangling without their own base64 group
-            3 => "=",   // 1 output byte was left dangling
-            _ => ""     // already a multiple of 4, nothing to restore
-        };
-
-        return Convert.FromBase64String(base64 + missingPaddingCharacters);
     }
 }

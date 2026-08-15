@@ -47,7 +47,7 @@ public static class KeyStore
         var ecPublic = ECDsa.Create();
         ecPublic.ImportFromPem(File.ReadAllText(Path.Combine(keysDirectory, "ec-public.pem")));
 
-        var sharedSecret = Convert.FromBase64String(File.ReadAllText(Path.Combine(keysDirectory, "hmac-secret.txt")).Trim());
+        var sharedSecret = Base64Url.DecodeFromChars(File.ReadAllText(Path.Combine(keysDirectory, "hmac-secret.txt")).Trim());
 
         return new DemoKeys
         {
