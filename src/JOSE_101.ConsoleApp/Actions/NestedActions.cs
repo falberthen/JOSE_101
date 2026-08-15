@@ -35,7 +35,7 @@ public sealed class NestedActions
 
     public void Unwrap()
     {
-        var token = io.GetToken("nested-jws-then-jwe.jwe");
+        var (token, isBundled) = io.GetTokenWithSource("nested-jws-then-jwe.jwe");
         var signWith = ConsoleIO.AskAlgorithm("Sign with (must match how the token was created)", Hmac, Rsa, Ecdsa);
         var encryptWith = ConsoleIO.AskAlgorithm("Encrypt with (must match how the token was created)", Dir, RsaOaep);
 
@@ -44,29 +44,83 @@ public sealed class NestedActions
             ResultRenderer.RenderJwe(token, "Outer JWE (encrypted)");
             ResultRenderer.RenderStep("Decrypting outer JWE...");
 
-            string innerJws = encryptWith switch
+            string innerJws;
+            if (isBundled)
             {
-                Dir => JweDirectFactory.Decrypt(token, keys.SharedSecret),
-                RsaOaep => JweRsaOaepFactory.Decrypt(token, keys.RsaPrivate),
-                _ => throw new ArgumentException($"Unknown encryptWith: {encryptWith}")
-            };
+                innerJws = encryptWith switch
+                {
+                    Dir => JweDirectFactory.Decrypt(token, keys.SharedSecret),
+                    RsaOaep => JweRsaOaepFactory.Decrypt(token, keys.RsaPrivate),
+                    _ => throw new ArgumentException($"Unknown encryptWith: {encryptWith}")
+                };
+            }
+            else
+            {
+                Console.WriteLine();
+                innerJws = encryptWith switch
+                {
+                    Dir => JweDirectFactory.Decrypt(token, Base64Url.DecodeFromChars(
+                        ConsoleIO.PromptMultiline("Paste the base64url-encoded secret (decryption):").Trim())),
+                    RsaOaep => DecryptWithCustomRsaKey(token),
+                    _ => throw new ArgumentException($"Unknown encryptWith: {encryptWith}")
+                };
+            }
+
             ResultRenderer.RenderSuccess("Outer JWE decrypted — inner JWS revealed:");
             ResultRenderer.RenderJws(innerJws, "Inner JWS (now visible)");
 
             ResultRenderer.RenderStep("Verifying inner JWS signature...");
-            string payloadJson = signWith switch
+
+            string payloadJson;
+            if (isBundled)
             {
-                Hmac => JwsHmacFactory.Verify(innerJws, keys.SharedSecret),
-                Rsa => JwsRsaFactory.Verify(innerJws, keys.RsaPublic),
-                Ecdsa => JwsEcdsaFactory.Verify(innerJws, keys.EcPublic),
-                _ => throw new ArgumentException($"Unknown signWith: {signWith}")
-            };
+                payloadJson = signWith switch
+                {
+                    Hmac => JwsHmacFactory.Verify(innerJws, keys.SharedSecret),
+                    Rsa => JwsRsaFactory.Verify(innerJws, keys.RsaPublic),
+                    Ecdsa => JwsEcdsaFactory.Verify(innerJws, keys.EcPublic),
+                    _ => throw new ArgumentException($"Unknown signWith: {signWith}")
+                };
+            }
+            else
+            {
+                payloadJson = signWith switch
+                {
+                    Hmac => JwsHmacFactory.Verify(innerJws, Base64Url.DecodeFromChars(
+                        ConsoleIO.PromptMultiline("Paste the base64url-encoded secret (verification):").Trim())),
+                    Rsa => VerifyWithCustomRsaKey(innerJws),
+                    Ecdsa => VerifyWithCustomEcKey(innerJws),
+                    _ => throw new ArgumentException($"Unknown signWith: {signWith}")
+                };
+            }
+
             ResultRenderer.RenderSuccess("Inner JWS signature verified.");
 
             var payload = ConsoleIO.ParsePayload(payloadJson);
             ResultRenderer.RenderSummaryWithPayload($"{SignLabel(signWith)} (inner JWS) + {EncLabel(encryptWith)} (outer JWE)", payload, token, "DECRYPTED / VERIFIED PAYLOAD");
-            AnsiConsole.MarkupLine("\n[grey]signWith/encryptWith were supplied by you, not read from the token's own header — trusting a token's self-declared algorithm is exactly the 'alg confusion' class of JWT vulnerability.[/]");
+            AnsiConsole.MarkupLine("\n[grey]Signed then encrypted — the outer header's cty: JWT marks the decrypted payload as itself a JWT to be verified.[/]");
         });
+    }
+
+    private static string DecryptWithCustomRsaKey(string token)
+    {
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(ConsoleIO.PromptMultiline("Paste the RSA private key (PEM, decryption):").Trim());
+        return JweRsaOaepFactory.Decrypt(token, rsa);
+    }
+
+    private static string VerifyWithCustomRsaKey(string innerJws)
+    {
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(ConsoleIO.PromptMultiline("Paste the RSA public key (PEM, verification):").Trim());
+        return JwsRsaFactory.Verify(innerJws, rsa);
+    }
+
+    private static string VerifyWithCustomEcKey(string innerJws)
+    {
+        var ec = ECDsa.Create();
+        ec.ImportFromPem(ConsoleIO.PromptMultiline("Paste the EC public key (PEM, verification):").Trim());
+        return JwsEcdsaFactory.Verify(innerJws, ec);
     }
 
     private (JwsAlgorithm, object) ResolveSigningForCreate(string signWith) => signWith switch
