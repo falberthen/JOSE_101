@@ -13,7 +13,9 @@ public static class JwsEcdsaFactory
 
     /// <summary>
     /// Verifies the ES256 signature using the EC public key and returns the payload JSON.
+    /// Verify() only accepts signed tokens, and the expected algorithm is passed explicitly, so a token declaring
+    /// anything other than ES256 is rejected instead of dictating how it gets verified.
     /// </summary>
     public static string Verify(string token, ECDsa publicKey)
-        => JWT.Decode(token, publicKey, JwsAlgorithm.ES256);
+        => JWT.Verify(token, publicKey, JwsAlgorithm.ES256);
 }

@@ -13,7 +13,9 @@ public static class JwsHmacFactory
 
     /// <summary>
     /// Verifies the HS256 signature and returns the payload JSON. Throws if the token was tampered with or the secret doesn't match.
+    /// Verify() only accepts signed tokens, and the expected algorithm is passed explicitly, so a token declaring
+    /// anything other than HS256 is rejected instead of dictating how it gets verified.
     /// </summary>
     public static string Verify(string token, byte[] secret)
-        => JWT.Decode(token, secret, JwsAlgorithm.HS256);
+        => JWT.Verify(token, secret, JwsAlgorithm.HS256);
 }

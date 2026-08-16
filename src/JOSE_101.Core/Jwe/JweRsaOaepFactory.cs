@@ -13,9 +13,9 @@ public static class JweRsaOaepFactory
 
     /// <summary>
     /// Decrypts the token with the RSA private key and returns the payload JSON.
-    /// The expected algorithms are passed explicitly so a token declaring anything other than
-    /// RSA-OAEP+A256GCM is rejected instead of dictating how it gets decrypted.
+    /// Decrypt() only accepts encrypted tokens, and the expected algorithms are passed explicitly, so a token
+    /// declaring anything other than RSA-OAEP+A256GCM is rejected instead of dictating how it gets decrypted.
     /// </summary>
     public static string Decrypt(string token, RSA privateKey)
-        => JWT.Decode(token, privateKey, JweAlgorithm.RSA_OAEP, JweEncryption.A256GCM);
+        => JWT.Decrypt(token, privateKey, JweAlgorithm.RSA_OAEP, JweEncryption.A256GCM);
 }

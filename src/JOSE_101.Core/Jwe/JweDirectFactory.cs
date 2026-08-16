@@ -13,9 +13,9 @@ public static class JweDirectFactory
 
     /// <summary>
     /// Decrypts the token with the same 256-bit <paramref name="key"/> and returns the payload JSON.
-    /// The expected algorithms are passed explicitly so a token declaring anything other than
-    /// dir+A256GCM is rejected instead of dictating how it gets decrypted.
+    /// Decrypt() only accepts encrypted tokens, and the expected algorithms are passed explicitly, so a token
+    /// declaring anything other than dir+A256GCM is rejected instead of dictating how it gets decrypted.
     /// </summary>
     public static string Decrypt(string token, byte[] key)
-        => JWT.Decode(token, key, JweAlgorithm.DIR, JweEncryption.A256GCM);
+        => JWT.Decrypt(token, key, JweAlgorithm.DIR, JweEncryption.A256GCM);
 }

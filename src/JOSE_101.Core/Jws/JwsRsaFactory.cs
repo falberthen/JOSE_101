@@ -13,7 +13,9 @@ public static class JwsRsaFactory
 
     /// <summary>
     /// Verifies the RS256 signature using the RSA public key and returns the payload JSON.
+    /// Verify() only accepts signed tokens, and the expected algorithm is passed explicitly, so a token declaring
+    /// anything other than RS256 is rejected instead of dictating how it gets verified.
     /// </summary>
     public static string Verify(string token, RSA publicKey)
-        => JWT.Decode(token, publicKey, JwsAlgorithm.RS256);
+        => JWT.Verify(token, publicKey, JwsAlgorithm.RS256);
 }
